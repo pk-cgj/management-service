@@ -6,14 +6,28 @@ This project implements a microservices architecture using Spring Boot, with Key
 
 ```
 management-service/
-├── keycloak/
-│   ├── docker-compose.yml
-│   └── management-realm.json
-├── postgre/
-│   ├── docker-compose.yml
-│   ├── init-db.sql
-│   └── README.md
-└── [other microservice directories]
+├── migration/
+│   ├── hazelcast/
+│   │   ├── hazelcast.yaml
+│   │   └── hazelcast-client.yaml
+│   ├── keycloak/
+│   │   └── management-realm.json
+│   └── postgres/
+│       └── init-db.sql
+├── order-management/
+├── user-management/
+│   ├── src/
+│   │   └── main/
+│   │       ├── java/
+│   │       └── resources/
+│   │           ├── application.yaml
+│   │           ├── local-hazelcast.yaml
+│   │           └── docker-application.yaml
+│   ├── build.gradle
+│   └── Dockerfile
+├── docker-compose.yml
+├── Dockerfile.keycloak
+└── README.md
 ```
 
 ## Prerequisites
@@ -24,41 +38,59 @@ management-service/
 
 ## Setup Instructions
 
-1. Start PostgreSQL (this will also create the shared network and initialize the databases):
+1. Start all services using Docker Compose:
    ```
-   cd postgre
    docker-compose up -d
    ```
 
-2. Start Keycloak:
-   ```
-   cd ../keycloak
-   docker-compose up -d
-   ```
-
-3. Access Keycloak admin console:
-    - URL: http://localhost:8080/admin/
+2. Access Keycloak admin console:
+    - URL: http://localhost:8888/admin/
     - Username: admin
     - Password: admin
 
-## PostgreSQL Setup
+## Services
 
-The PostgreSQL container is configured to automatically create the necessary databases and users on startup. This is done through an initialization script (`init-db.sql`) that is executed when the container is first created.
+- Keycloak: http://localhost:8888
+- User Management Service: http://localhost:8080
+- PostgreSQL: http://localhost:5432
+    - Databases: keycloak, user_service, order_service
+- Kafka: http://localhost:29092
+- Zookeeper: http://localhost:22181
+- Hazelcast: http://localhost:5701
+- Hazelcast Management Center: http://localhost:8088
 
-The script does the following:
-1. Creates databases for Keycloak, User Service, and Order Service.
-2. Creates users for each database with appropriate permissions.
-3. Sets up initial schemas for User Service and Order Service databases.
+## Configuration
 
-You can find this script in the `postgre` directory. If you need to modify the database structure or add initial data, you can edit this script.
+The `docker-application.yaml` file in the `user-management/src/main/resources/` directory contains the configuration for the User Management Service. Key configurations include:
 
-Note: The initialization script only runs if the data directory is empty (i.e., when the container is first created). If you need to rerun the script, you'll need to remove the existing data volume first.
+- Server port: 8080
+- Swagger UI path: /swagger-ui.html
+- OAuth2 resource server and client configurations
+- Kafka consumer and producer settings
+- PostgreSQL datasource configuration
+- Hazelcast client configuration
 
-To remove the existing data volume and rerun the initialization:
-```bash
-docker-compose down -v
-docker-compose up -d
-```
+For detailed configuration, please refer to the `docker-application.yaml` file.
+
+## Microservices
+
+### User Management Service
+
+Endpoints and access:
+- GET /api/users/{id}: Accessible by USER (only their own), MANAGER, and ADMIN
+- PUT /api/users/{id}: Accessible by USER (only their own), MANAGER, and ADMIN
+- GET /api/users: Accessible by MANAGER and ADMIN
+- POST /api/users: Accessible by MANAGER and ADMIN
+- DELETE /api/users/{id}: Accessible by ADMIN only
+
+### Order Management Service
+
+Endpoints and access:
+- GET /api/orders: USER can only view their own, MANAGER and ADMIN can view all
+- POST /api/orders: Accessible by all roles (USER, MANAGER, ADMIN)
+- GET /api/orders/{id}: USER can only view their own, MANAGER and ADMIN can view all
+- PUT /api/orders/{id}: Accessible by MANAGER (status updates only) and ADMIN
+- DELETE /api/orders/{id}: Accessible by ADMIN only
 
 ## Imported Users and Roles
 
@@ -79,104 +111,27 @@ The following sample users and roles are imported into Keycloak:
     - Password: password
     - Role: ADMIN
 
-### Role Definitions:
-- USER:
-    - Can view and modify their own user profile
-    - Can view their own orders
-    - Can create new orders
-    - Cannot modify or delete any orders
-- MANAGER:
-    - Can view and manage all user profiles (except admins)
-    - Can view all orders
-    - Can create new orders
-    - Can modify order status (e.g., mark as shipped, cancelled)
-    - Cannot delete orders
-- ADMIN:
-    - Has full access to all functionalities
-    - Can manage all users, including other admins
-    - Can perform any operation on orders, including deletion
-
-## Services
-
-- Keycloak: http://localhost:8080
-- PostgreSQL: localhost:5432
-    - Databases: keycloak, user_service, order_service
-
-## Microservices Configuration
-
-### User Management Service
-
-Endpoints and access:
-- GET /api/users/{id}: Accessible by USER (only their own), MANAGER, and ADMIN
-- PUT /api/users/{id}: Accessible by USER (only their own), MANAGER, and ADMIN
-- GET /api/users: Accessible by MANAGER and ADMIN
-- POST /api/users: Accessible by MANAGER and ADMIN
-- DELETE /api/users/{id}: Accessible by ADMIN only
-
-### Order Management Service
-
-Endpoints and access:
-- GET /api/orders: USER can only view their own, MANAGER and ADMIN can view all
-- POST /api/orders: Accessible by all roles (USER, MANAGER, ADMIN)
-- GET /api/orders/{id}: USER can only view their own, MANAGER and ADMIN can view all
-- PUT /api/orders/{id}: Accessible by MANAGER (status updates only) and ADMIN
-- DELETE /api/orders/{id}: Accessible by ADMIN only
+For detailed role definitions, please refer to the original README.
 
 ## Stopping Services
 
-To stop the services:
+To stop all services:
 ```
 docker-compose down
 ```
-(Run this command in both postgre and keycloak directories)
 
-To remove the shared network:
+To remove all associated volumes:
 ```
-docker network rm microservices-network
+docker-compose down -v
 ```
-
-Note: Only remove the network if you're sure no other services are using it.
-
 
 ## Troubleshooting
 
-If you encounter issues:
+If you encounter any issues, please check the logs of individual services using:
+```
+docker-compose logs [service_name]
+```
 
-1. Ensure all containers are running:
-   ```
-   docker ps
-   ```
+Replace `[service_name]` with the name of the service you want to inspect (e.g., user-management, keycloak, postgres, etc.).
 
-2. Check container logs:
-   ```
-   docker logs shared-postgres
-   docker logs keycloak-server
-   ```
-
-3. Verify network connectivity:
-   ```
-   docker network inspect microservices-network
-   ```
-
-4. If Keycloak fails to start due to permission issues:
-    - Ensure PostgreSQL is fully initialized before starting Keycloak.
-    - Check that the `init-db.sql` script is granting the correct permissions to the Keycloak user.
-    - You can manually grant permissions by connecting to the PostgreSQL container:
-      ```
-      docker exec -it shared-postgres psql -U postgres
-      ```
-      Then run:
-      ```sql
-      \c keycloak
-      GRANT ALL ON SCHEMA public TO keycloak;
-      GRANT ALL ON ALL TABLES IN SCHEMA public TO keycloak;
-      GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO keycloak;
-      ```
-
-5. If database issues persist, you may need to reinitialize the databases:
-   ```
-   docker-compose down -v
-   docker-compose up -d
-   ```
-
-Remember to always check the logs for the most up-to-date error messages and status information.
+For more detailed information about each service, refer to their respective documentation or configuration files.

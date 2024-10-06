@@ -1,0 +1,20 @@
+FROM quay.io/keycloak/keycloak:20.0.0
+
+USER root
+
+# Create necessary directories for microdnf
+RUN mkdir -p /var/cache/yum/metadata && \
+    chmod -R 777 /var/cache/yum
+
+# Update and install curl using microdnf
+RUN microdnf update -y && \
+    microdnf install -y curl && \
+    microdnf clean all
+
+USER 1000
+
+# Enable features and scripts
+ENV KC_FEATURES=scripts
+ENV KC_SPI_SCRIPT_SECURITY_POLICY=UNRESTRICTED
+
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
