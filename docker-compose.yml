@@ -51,7 +51,7 @@ services:
       SPRING_SECURITY_OAUTH2_CLIENT_ID: order-service
       SPRING_SECURITY_OAUTH2_CLIENT_SECRET: QAK9K2j1lorVuTt95cdHmPGifZnrFsuq
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/user_service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_service
       SPRING_DATASOURCE_USERNAME: order_service
       SPRING_DATASOURCE_PASSWORD: order_service_password
       HAZELCAST_CLUSTER_NAME: dev
@@ -100,7 +100,7 @@ services:
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/management-realm/.well-known/openid-configuration"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/realms/management-realm/.well-known/openid-configuration" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -123,7 +123,7 @@ services:
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "myuser", "-d", "test"]
+      test: [ "CMD", "pg_isready", "-U", "myuser", "-d", "test" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -153,7 +153,7 @@ services:
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list" ]
       interval: 10s
       timeout: 5s
       retries: 5

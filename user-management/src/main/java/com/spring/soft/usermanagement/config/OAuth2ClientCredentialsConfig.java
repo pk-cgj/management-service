@@ -1,7 +1,7 @@
 package com.spring.soft.usermanagement.config;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -23,10 +23,9 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenRespon
 
 @Configuration
 @Slf4j
+@RequiredArgsConstructor
 public class OAuth2ClientCredentialsConfig {
-
-    @Autowired
-    private ClientRegistrationRepository existingClientRegistrationRepository;
+    private final ClientRegistrationRepository existingClientRegistrationRepository;
 
     @Primary
     @Bean

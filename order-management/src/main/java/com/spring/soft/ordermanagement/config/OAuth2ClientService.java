@@ -25,7 +25,7 @@ import java.util.Map;
 @Slf4j
 public class OAuth2ClientService {
 
-    private final String orderServiceRegistrationId = System.getenv("INTERNAL_CLIENT_ID");
+    private final String userServiceRegistrationId = System.getenv("INTERNAL_CLIENT_ID");
     private final OAuth2AuthorizedClientManager authorizedClientManager;
     private final RestTemplate restTemplate;
 
@@ -36,10 +36,10 @@ public class OAuth2ClientService {
 
     public ResponseEntity<String> callProtectedApi(String url, HttpMethod method, Map<String, String> body) {
         try {
-            log.debug("Attempting to authorize client with registration ID: {}", orderServiceRegistrationId);
+            log.debug("Attempting to authorize client with registration ID: {}", userServiceRegistrationId);
             OAuth2AuthorizeRequest authorizeRequest = OAuth2AuthorizeRequest
-                    .withClientRegistrationId(orderServiceRegistrationId)
-                    .principal(orderServiceRegistrationId)
+                    .withClientRegistrationId(userServiceRegistrationId)
+                    .principal(userServiceRegistrationId)
                     .build();
 
             OAuth2AuthorizedClient authorizedClient = authorizedClientManager.authorize(authorizeRequest);
@@ -49,7 +49,7 @@ public class OAuth2ClientService {
                 throw new OAuth2AuthorizationException(error);
             }
 
-            log.debug("Successfully obtained OAuth2 token for client: {}", orderServiceRegistrationId);
+            log.debug("Successfully obtained OAuth2 token for client: {}", userServiceRegistrationId);
             log.debug("Access token: {}", authorizedClient.getAccessToken().getTokenValue());
             log.debug("Token type: {}", authorizedClient.getAccessToken().getTokenType().getValue());
             log.debug("Expires at: {}", authorizedClient.getAccessToken().getExpiresAt());

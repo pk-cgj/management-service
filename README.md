@@ -1,6 +1,7 @@
 # Microservices Project with Keycloak and PostgreSQL
 
-This project implements a microservices architecture using Spring Boot, with Keycloak for authentication and PostgreSQL for data storage.
+This project implements a microservices architecture using Spring Boot, with Keycloak for authentication and PostgreSQL
+for data storage.
 
 ## Project Structure
 
@@ -61,7 +62,8 @@ management-service/
 
 ## Configuration
 
-The `docker-application.yaml` file in the `user-management/src/main/resources/` directory contains the configuration for the User Management Service. Key configurations include:
+The `docker-application.yaml` file in the `user-management/src/main/resources/` directory contains the configuration for
+the User Management Service. Key configurations include:
 
 - Server port: 8080
 - Swagger UI path: /swagger-ui.html
@@ -77,6 +79,7 @@ For detailed configuration, please refer to the `docker-application.yaml` file.
 ### User Management Service
 
 Endpoints and access:
+
 - GET /api/users/{id}: Accessible by USER (only their own), MANAGER, and ADMIN
 - PUT /api/users/{id}: Accessible by USER (only their own), MANAGER, and ADMIN
 - GET /api/users: Accessible by MANAGER and ADMIN
@@ -86,6 +89,7 @@ Endpoints and access:
 ### Order Management Service
 
 Endpoints and access:
+
 - GET /api/orders: USER can only view their own, MANAGER and ADMIN can view all
 - POST /api/orders: Accessible by all roles (USER, MANAGER, ADMIN)
 - GET /api/orders/{id}: USER can only view their own, MANAGER and ADMIN can view all
@@ -116,11 +120,13 @@ For detailed role definitions, please refer to the original README.
 ## Stopping Services
 
 To stop all services:
+
 ```
 docker-compose down
 ```
 
 To remove all associated volumes:
+
 ```
 docker-compose down -v
 ```
@@ -128,10 +134,12 @@ docker-compose down -v
 ## Troubleshooting
 
 If you encounter any issues, please check the logs of individual services using:
+
 ```
 docker-compose logs [service_name]
 ```
 
-Replace `[service_name]` with the name of the service you want to inspect (e.g., user-management, keycloak, postgres, etc.).
+Replace `[service_name]` with the name of the service you want to inspect (e.g., user-management, keycloak, postgres,
+etc.).
 
 For more detailed information about each service, refer to their respective documentation or configuration files.

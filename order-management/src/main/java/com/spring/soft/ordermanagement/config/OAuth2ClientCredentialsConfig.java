@@ -1,7 +1,7 @@
 package com.spring.soft.ordermanagement.config;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -23,15 +23,14 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenRespon
 
 @Configuration
 @Slf4j
+@RequiredArgsConstructor
 public class OAuth2ClientCredentialsConfig {
-
-    @Autowired
-    private ClientRegistrationRepository existingClientRegistrationRepository;
+    private final ClientRegistrationRepository existingClientRegistrationRepository;
 
     @Primary
     @Bean
     public ClientRegistrationRepository extendedClientRegistrationRepository() {
-        ClientRegistration orderServiceRegistration = ClientRegistration.withRegistrationId(System.getenv("INTERNAL_CLIENT_ID"))
+        ClientRegistration userServiceRegistration = ClientRegistration.withRegistrationId(System.getenv("INTERNAL_CLIENT_ID"))
                 .tokenUri(System.getenv("INTERNAL_TOKEN_URI"))
                 .clientId(System.getenv("INTERNAL_CLIENT_ID"))
                 .clientSecret(System.getenv("INTERNAL_CLIENT_SECRET"))
@@ -40,9 +39,9 @@ public class OAuth2ClientCredentialsConfig {
                 .build();
 
         log.info("Created user-service client registration with client ID: {}, token URI: {}, scopes: {}",
-                orderServiceRegistration.getClientId(),
-                orderServiceRegistration.getProviderDetails().getTokenUri(),
-                orderServiceRegistration.getScopes());
+                userServiceRegistration.getClientId(),
+                userServiceRegistration.getProviderDetails().getTokenUri(),
+                userServiceRegistration.getScopes());
 
         ClientRegistration existingRegistration = existingClientRegistrationRepository.findByRegistrationId("keycloak");
 
@@ -51,7 +50,7 @@ public class OAuth2ClientCredentialsConfig {
                 existingRegistration.getProviderDetails().getTokenUri(),
                 existingRegistration.getScopes());
 
-        return new InMemoryClientRegistrationRepository(existingRegistration, orderServiceRegistration);
+        return new InMemoryClientRegistrationRepository(existingRegistration, userServiceRegistration);
     }
 
     @Bean
