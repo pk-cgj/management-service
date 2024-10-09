@@ -1,4 +1,4 @@
-package com.spring.soft.usermanagement.config;
+package com.spring.soft.ordermanagement.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

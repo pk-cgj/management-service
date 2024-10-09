@@ -41,7 +41,7 @@ test {
 }
 
 bootJar {
-    archiveBaseName = 'user-management'
+    archiveBaseName = 'order-management'
     archiveVersion = '0.1.0'
 }
 

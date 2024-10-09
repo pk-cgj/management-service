@@ -7,9 +7,12 @@ services:
     ports:
       - "8080:8080"
     environment:
+      SPRING_PROFILES_ACTIVE: docker
       KEYCLOAK_INTERNAL_URI: http://keycloak:8080
       KEYCLOAK_EXTERNAL_URI: http://localhost:8888
-      SPRING_PROFILES_ACTIVE: docker
+      INTERNAL_CLIENT_ID: order-service
+      INTERNAL_CLIENT_SECRET: QAK9K2j1lorVuTt95cdHmPGifZnrFsuq
+      INTERNAL_TOKEN_URI: http://keycloak:8080/realms/management-realm/protocol/openid-connect/token
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI: http://localhost:8888/realms/management-realm
       SPRING_SECURITY_OAUTH2_CLIENT_ID: user-service
       SPRING_SECURITY_OAUTH2_CLIENT_SECRET: Jn0R3ZzztVbr4n5JJkRttXQOLnpxB6ix
@@ -17,6 +20,40 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/user_service
       SPRING_DATASOURCE_USERNAME: user_service
       SPRING_DATASOURCE_PASSWORD: user_service_password
+      HAZELCAST_CLUSTER_NAME: dev
+    networks:
+      - microservices-network
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      hazelcast:
+        condition: service_healthy
+
+  order-management:
+    build:
+      context: ./order-management
+      dockerfile: Dockerfile
+    container_name: order-management
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      KEYCLOAK_INTERNAL_URI: http://keycloak:8080
+      KEYCLOAK_EXTERNAL_URI: http://localhost:8888
+      INTERNAL_CLIENT_ID: user-service
+      INTERNAL_CLIENT_SECRET: Jn0R3ZzztVbr4n5JJkRttXQOLnpxB6ix
+      INTERNAL_TOKEN_URI: http://keycloak:8080/realms/management-realm/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI: http://localhost:8888/realms/management-realm
+      SPRING_SECURITY_OAUTH2_CLIENT_ID: order-service
+      SPRING_SECURITY_OAUTH2_CLIENT_SECRET: QAK9K2j1lorVuTt95cdHmPGifZnrFsuq
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/user_service
+      SPRING_DATASOURCE_USERNAME: order_service
+      SPRING_DATASOURCE_PASSWORD: order_service_password
       HAZELCAST_CLUSTER_NAME: dev
     networks:
       - microservices-network
