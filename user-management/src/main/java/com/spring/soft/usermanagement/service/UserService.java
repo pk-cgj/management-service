@@ -1,25 +1,24 @@
 package com.spring.soft.usermanagement.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spring.soft.usermanagement.config.OAuth2ClientService;
-import com.spring.soft.usermanagement.dto.UserDetailsDTO;
+import com.spring.soft.usermanagement.dto.UserDetails;
 import com.spring.soft.usermanagement.entity.User;
-import com.spring.soft.usermanagement.exception.OrderNotFoundException;
 import com.spring.soft.usermanagement.exception.UserNotFoundException;
+import com.spring.soft.usermanagement.intgeration.OrderServiceClient;
 import com.spring.soft.usermanagement.repository.UserRepository;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -27,8 +26,8 @@ import java.util.Map;
 public class UserService {
     private final UserRepository userRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final OAuth2ClientService oauth2ClientService;
-    private final ObjectMapper objectMapper;
+    private final OrderServiceClient orderServiceClient;
+    private final Validator validator;
 
     @Cacheable(value = "users", key = "#id")
     public User getUserById(Long id) {
@@ -36,33 +35,14 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
     }
 
-    public UserDetailsDTO getUserDetailsById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-        List<Map<String, Object>> orderHistory = fetchOrderHistory(id);
-
-        return new UserDetailsDTO(user, orderHistory);
-    }
-
-    @SneakyThrows
-    private List<Map<String, Object>> fetchOrderHistory(Long userId) {
-        String orderServiceUrl = "http://order-management:8081/api/orders/user/" + userId;
-        ResponseEntity<String> orderResponse = oauth2ClientService.get(orderServiceUrl);
-        if (orderResponse.getStatusCode().is2xxSuccessful()) {
-            return objectMapper.readValue(orderResponse.getBody(),
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, Map.class));
-        } else if (orderResponse.getStatusCode() == HttpStatus.NOT_FOUND) {
-            throw new OrderNotFoundException("Order history not found for user: " + userId);
-        } else {
-            log.error("Failed to fetch order history for user {}. Status: {}", userId, orderResponse.getStatusCode());
-            throw new RuntimeException("Failed to fetch order history. Please try again later.");
-        }
-    }
-
     @Cacheable(value = "users")
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
     }
 
     @CachePut(value = "users", key = "#user.id")
@@ -79,8 +59,62 @@ public class UserService {
     public User updateUser(Long id, User user) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
-        existingUser.setUsername(user.getUsername());
-        existingUser.setEmail(user.getEmail());
+        return updateUserEntity(user, existingUser);
+    }
+
+    public UserDetails getUserDetailsById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        return UserDetails.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .orderHistory(orderServiceClient.getOrdersByUserId(id))
+                .build();
+    }
+
+    public UserDetails getUserDetailsByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        return UserDetails.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .orderHistory(orderServiceClient.getOrdersByUserId(user.getId()))
+                .build();
+    }
+
+    @Transactional
+    public void createOrUpdateUserFromKeycloak(String username, String email) {
+        User user = userRepository.findByEmail(username)
+                .orElse(new User());
+
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setId(0L);
+
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        if (!violations.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (ConstraintViolation<User> violation : violations) {
+                sb.append(violation.getPropertyPath())
+                        .append(": ")
+                        .append(violation.getMessage())
+                        .append("; ");
+            }
+            throw new DataIntegrityViolationException("Invalid user data: " + sb);
+        }
+        userRepository.save(user);
+    }
+
+    public User updateUserByEmail(String email, User user) {
+        User existingUser = getUserByEmail(email);
+        return updateUserEntity(user, existingUser);
+    }
+
+    private User updateUserEntity(User requestedUser, User existingUser) {
+        existingUser.setUsername(requestedUser.getUsername());
+        existingUser.setEmail(requestedUser.getEmail());
         User updatedUser = userRepository.save(existingUser);
         log.info("User updated successfully. User ID: {}", updatedUser.getId());
         return updatedUser;

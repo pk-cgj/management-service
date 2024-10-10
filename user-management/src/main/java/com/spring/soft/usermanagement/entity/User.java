@@ -34,11 +34,6 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @NotBlank
-    @Size(min = 8, max = 60)
-    @Column(nullable = false)
-    private String password;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

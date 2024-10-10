@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
@@ -71,6 +72,12 @@ public class GlobalExceptionHandler {
         String message = "Failed to communicate with the external service.";
         ErrorDetails errorDetails = new ErrorDetails(new Date(), message, ex.getMessage());
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_GATEWAY);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> handleAccessDeniedException(AccessDeniedException ex) {
+        log.error("Access denied: ", ex);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
     }
 
     @ExceptionHandler(Exception.class)

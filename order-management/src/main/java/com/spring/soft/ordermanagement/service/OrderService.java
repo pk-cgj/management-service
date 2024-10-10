@@ -1,17 +1,16 @@
 package com.spring.soft.ordermanagement.service;
 
-import com.spring.soft.ordermanagement.config.OAuth2ClientService;
+import com.spring.soft.ordermanagement.dto.User;
 import com.spring.soft.ordermanagement.entity.Order;
 import com.spring.soft.ordermanagement.exception.OrderNotFoundException;
 import com.spring.soft.ordermanagement.exception.UserNotFoundException;
+import com.spring.soft.ordermanagement.intgeration.UserServiceClient;
 import com.spring.soft.ordermanagement.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +23,7 @@ import java.util.List;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final OAuth2ClientService oauth2ClientService;
+    private final UserServiceClient userServiceClient;
 
     @Cacheable(value = "orders", key = "#id")
     public Order getOrderById(Long id) {
@@ -43,10 +42,8 @@ public class OrderService {
 
     @CachePut(value = "orders", key = "#order.id")
     public Order createOrder(Order order) {
-        String userServiceUrl = "http://user-management:8080/api/users/" + order.getUserId();
-        ResponseEntity<String> userResponse = oauth2ClientService.get(userServiceUrl);
-
-        if (userResponse.getStatusCode() != HttpStatus.OK) {
+        User user = userServiceClient.getUserByUserId(order.getUserId());
+        if (user == null) {
             log.error("User not found or inaccessible. User ID: {}", order.getUserId());
             throw new UserNotFoundException("User not found or inaccessible");
         }

@@ -42,6 +42,11 @@ spring:
             scope: openid,profile,email
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+          order-service:
+            client-id: ${ORDER_SERVICE_CLIENT_ID}
+            client-secret: ${ORDER_SERVICE_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: openid,profile,email,order:read
         provider:
           keycloak:
             issuer-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI}
@@ -50,6 +55,8 @@ spring:
             user-info-uri: ${spring.security.oauth2.client.provider.keycloak.issuer-uri}/protocol/openid-connect/userinfo
             jwk-set-uri: ${spring.security.oauth2.client.provider.keycloak.issuer-uri}/protocol/openid-connect/certs
             user-name-attribute: preferred_username
+          order-service:
+            token-uri: ${ORDER_SERVICE_TOKEN_URI}
       resourceserver:
         jwt:
           jwk-set-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI}/protocol/openid-connect/certs
@@ -68,10 +75,3 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
   hazelcast:
     config: classpath:hazelcast-client.yaml
-
-custom-properties:
-  keycloak-internal-uri: ${KEYCLOAK_INTERNAL_URI}
-  keycloak-external-uri: ${KEYCLOAK_EXTERNAL_URI}
-  internal-client-id: ${INTERNAL_CLIENT_ID}
-  internal-client-secret: ${INTERNAL_CLIENT_SECRET}
-  internal-token-uri: ${INTERNAL_TOKEN_URI}

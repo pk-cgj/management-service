@@ -27,6 +27,8 @@ dependencies {
     implementation 'org.hibernate.validator:hibernate-validator:7.0.5.Final'
     implementation 'org.postgresql:postgresql:42.7.2'
     implementation 'com.hazelcast:hazelcast:5.5.0'
+    implementation 'com.auth0:java-jwt:4.4.0'
+    implementation 'com.auth0:jwks-rsa:0.22.1'
 
     implementation 'org.projectlombok:lombok:1.18.28'
     compileOnly 'org.projectlombok:lombok:1.18.34'
