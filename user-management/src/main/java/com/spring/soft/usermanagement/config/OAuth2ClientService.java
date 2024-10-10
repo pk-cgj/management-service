@@ -24,22 +24,24 @@ import java.util.Map;
 @Service
 @Slf4j
 public class OAuth2ClientService {
-
-    private final String orderServiceRegistrationId = System.getenv("INTERNAL_CLIENT_ID");
     private final OAuth2AuthorizedClientManager authorizedClientManager;
     private final RestTemplate restTemplate;
 
-    public OAuth2ClientService(OAuth2AuthorizedClientManager authorizedClientManager) {
+    private final CustomProperties customProperties;
+
+    public OAuth2ClientService(CustomProperties customProperties,
+                               OAuth2AuthorizedClientManager authorizedClientManager) {
+        this.customProperties = customProperties;
         this.authorizedClientManager = authorizedClientManager;
         this.restTemplate = new RestTemplate();
     }
 
     public ResponseEntity<String> callProtectedApi(String url, HttpMethod method, Map<String, String> body) {
         try {
-            log.debug("Attempting to authorize client with registration ID: {}", orderServiceRegistrationId);
+            log.debug("Attempting to authorize client with registration ID: {}", customProperties.getInternalClientId());
             OAuth2AuthorizeRequest authorizeRequest = OAuth2AuthorizeRequest
-                    .withClientRegistrationId(orderServiceRegistrationId)
-                    .principal(orderServiceRegistrationId)
+                    .withClientRegistrationId(customProperties.getInternalClientId())
+                    .principal(customProperties.getInternalClientId())
                     .build();
 
             OAuth2AuthorizedClient authorizedClient = authorizedClientManager.authorize(authorizeRequest);
@@ -49,7 +51,7 @@ public class OAuth2ClientService {
                 throw new OAuth2AuthorizationException(error);
             }
 
-            log.debug("Successfully obtained OAuth2 token for client: {}", orderServiceRegistrationId);
+            log.debug("Successfully obtained OAuth2 token for client: {}", customProperties.getInternalClientId());
             log.debug("Access token: {}", authorizedClient.getAccessToken().getTokenValue());
             log.debug("Token type: {}", authorizedClient.getAccessToken().getTokenType().getValue());
             log.debug("Expires at: {}", authorizedClient.getAccessToken().getExpiresAt());

@@ -65,3 +65,10 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
   hazelcast:
     config: classpath:hazelcast-client.yaml
+
+custom-properties:
+  keycloak-internal-uri: ${KEYCLOAK_INTERNAL_URI}
+  keycloak-external-uri: ${KEYCLOAK_EXTERNAL_URI}
+  internal-client-id: ${INTERNAL_CLIENT_ID}
+  internal-client-secret: ${INTERNAL_CLIENT_SECRET}
+  internal-token-uri: ${INTERNAL_TOKEN_URI}

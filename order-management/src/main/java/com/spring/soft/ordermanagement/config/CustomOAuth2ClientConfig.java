@@ -1,5 +1,6 @@
 package com.spring.soft.ordermanagement.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,10 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
+@RequiredArgsConstructor
 public class CustomOAuth2ClientConfig {
-
-    private final String keycloakInternalUri = System.getenv("KEYCLOAK_INTERNAL_URI");
-    private final String keycloakExternalUri = System.getenv("KEYCLOAK_EXTERNAL_URI");
+    private final CustomProperties customProperties;
 
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository(OAuth2ClientProperties properties) {
@@ -35,12 +35,12 @@ public class CustomOAuth2ClientConfig {
             builder.authorizationUri(properties.getProvider().get(key).getAuthorizationUri());
 
             // Modify these URLs for server-to-server communication
-            builder.tokenUri(properties.getProvider().get(key).getTokenUri().replace(keycloakExternalUri, keycloakInternalUri));
-            builder.jwkSetUri(properties.getProvider().get(key).getJwkSetUri().replace(keycloakExternalUri, keycloakInternalUri));
-            builder.userInfoUri(properties.getProvider().get(key).getUserInfoUri().replace(keycloakExternalUri, keycloakInternalUri));
+            builder.tokenUri(properties.getProvider().get(key).getTokenUri().replace(customProperties.getKeycloakExternalUri(), customProperties.getKeycloakInternalUri()));
+            builder.jwkSetUri(properties.getProvider().get(key).getJwkSetUri().replace(customProperties.getKeycloakExternalUri(), customProperties.getKeycloakInternalUri()));
+            builder.userInfoUri(properties.getProvider().get(key).getUserInfoUri().replace(customProperties.getKeycloakExternalUri(), customProperties.getKeycloakInternalUri()));
 
             // Modify issuer-uri for server-to-server communication
-            String issuerUri = properties.getProvider().get(key).getIssuerUri().replace(keycloakExternalUri, keycloakInternalUri);
+            String issuerUri = properties.getProvider().get(key).getIssuerUri().replace(customProperties.getKeycloakExternalUri(), customProperties.getKeycloakInternalUri());
             builder.providerConfigurationMetadata(java.util.Map.of("issuer", issuerUri));
 
             builder.userNameAttributeName(properties.getProvider().get(key).getUserNameAttribute());

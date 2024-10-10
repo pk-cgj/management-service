@@ -26,14 +26,16 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenRespon
 @RequiredArgsConstructor
 public class OAuth2ClientCredentialsConfig {
     private final ClientRegistrationRepository existingClientRegistrationRepository;
+    private final CustomProperties customProperties;
+
 
     @Primary
     @Bean
     public ClientRegistrationRepository extendedClientRegistrationRepository() {
-        ClientRegistration userServiceRegistration = ClientRegistration.withRegistrationId(System.getenv("INTERNAL_CLIENT_ID"))
-                .tokenUri(System.getenv("INTERNAL_TOKEN_URI"))
-                .clientId(System.getenv("INTERNAL_CLIENT_ID"))
-                .clientSecret(System.getenv("INTERNAL_CLIENT_SECRET"))
+        ClientRegistration userServiceRegistration = ClientRegistration.withRegistrationId(customProperties.getInternalClientId())
+                .tokenUri(customProperties.getInternalTokenUri())
+                .clientId(customProperties.getInternalClientId())
+                .clientSecret(customProperties.getInternalClientSecret())
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                 .scope("openid", "profile", "email")
                 .build();

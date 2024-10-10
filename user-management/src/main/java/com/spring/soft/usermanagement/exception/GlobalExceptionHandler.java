@@ -1,17 +1,23 @@
 package com.spring.soft.usermanagement.exception;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserNotFoundException.class)
@@ -31,6 +37,26 @@ public class GlobalExceptionHandler {
         String message = "Database constraint violation.";
         ErrorDetails errorDetails = new ErrorDetails(new Date(), message, ex.getMostSpecificCause().getMessage());
         return new ResponseEntity<>(errorDetails, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getBindingResult().getFieldErrors().forEach((fieldError) -> {
+            String fieldName = fieldError.getField();
+            String errorMessage = fieldError.getDefaultMessage(); // Directly getting the error message
+            errors.put(fieldName, errorMessage);
+        });
+
+        ValidationErrorResponse response = new ValidationErrorResponse(
+                LocalDateTime.now().toString(),
+                errors
+        );
+
+        log.error("Validation errors: {}", response);
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(JsonProcessingException.class)
@@ -53,16 +79,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @Data
+    @AllArgsConstructor
     private static class ErrorDetails {
         private Date timestamp;
         private String message;
         private String details;
+    }
 
-        public ErrorDetails(Date timestamp, String message, String details) {
-            this.timestamp = timestamp;
-            this.message = message;
-            this.details = details;
-        }
+    @AllArgsConstructor
+    private static class ValidationErrorResponse {
+        private String timestamp;
+        private Map<String, String> errors;
     }
 }
