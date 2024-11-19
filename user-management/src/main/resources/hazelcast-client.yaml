@@ -1,0 +1,8 @@
+hazelcast-client:
+  cluster-name: dev
+  network:
+    cluster-members:
+      - hazelcast:5701
+  connection-strategy:
+    async-start: true
+    reconnect-mode: ON
